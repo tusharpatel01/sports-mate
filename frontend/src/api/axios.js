@@ -57,11 +57,11 @@ api.interceptors.response.use(
       refreshing = true;
 
       try {
-        const { data } = await axios.post(
-          "/api/auth/refresh",
-          {},
-          { withCredentials: true }
-        );
+       const { data } = await axios.post(
+  (import.meta.env.VITE_API_URL || "") + "/api/auth/refresh",
+  {},
+  { withCredentials: true }   // ← critical
+);
         const newToken = data.accessToken;
         _store.dispatch(_setAccessTokenAction(newToken));
         queue.forEach((p) => p.resolve(newToken));

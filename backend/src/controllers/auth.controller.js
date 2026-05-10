@@ -49,7 +49,13 @@ exports.login = asyncHandler(async (req, res, next) => {
 
 // POST /api/auth/logout
 exports.logout = asyncHandler(async (req, res) => {
-  res.clearCookie("refreshToken");
+  const isProduction = process.env.NODE_ENV === "production";
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    path: "/",
+  });
   res.json({ success: true, message: "Logged out successfully." });
 });
 
