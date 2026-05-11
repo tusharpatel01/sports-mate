@@ -2,9 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  Bell, CheckCheck,
+  Bell, CheckCheck, LogOut, User, Settings,
   CheckCircle, XCircle, MessageCircle, MapPin, Clock, Trophy,
 } from "lucide-react";
+import { logoutUser, selectCurrentUser } from "../../features/auth/authSlice";
+// import Avatar from "../common/Avatar";
+import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   fetchNotifications, markAllRead, markOneRead,
@@ -71,10 +74,14 @@ export default function NotificationDropdown() {
     else if (notif.chat) navigate(`/chat/${notif.chat._id || notif.chat}`);
   };
 
-  const handleMarkAll = (e) => {
-    e.stopPropagation();
-    dispatch(markAllRead());
-  };
+ const user = useSelector(selectCurrentUser);
+
+const handleLogout = async () => {
+  setOpen(false);
+  await dispatch(logoutUser());
+  navigate("/");
+  toast.success("Logged out.");
+};
 
   const recent = notifications.slice(0, 8);
 
@@ -115,10 +122,12 @@ export default function NotificationDropdown() {
               exit={{ opacity: 0, y: -8, scale: 0.96 }}
               transition={{ duration: 0.15 }}
               className="
-                fixed sm:absolute z-[70]
-                left-2 right-2 top-16 sm:top-auto sm:left-auto sm:right-0 sm:mt-2
-                sm:w-96 max-w-[calc(100vw-16px)]
-                card overflow-hidden shadow-2xl
+                 fixed z-[70]
+    left-2 right-2 top-16
+    sm:left-auto sm:right-4 sm:top-16
+    md:left-56 md:right-auto md:top-14
+    sm:w-96 max-w-[calc(100vw-16px)]
+    card overflow-hidden shadow-2xl
               "
             >
               <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07]">
@@ -196,15 +205,48 @@ export default function NotificationDropdown() {
                 )}
               </div>
 
-              {notifications.length > 0 && (
-                <Link
-                  to="/notifications"
-                  onClick={() => setOpen(false)}
-                  className="block text-center py-2.5 text-xs text-brand-400 hover:bg-white/5 transition-colors border-t border-white/[0.07] font-medium"
-                >
-                  View all notifications
-                </Link>
-              )}
+              {/* Footer with user profile, settings, logout */}
+<div className="border-t border-white/[0.07]">
+  {notifications.length > 0 && (
+    <Link
+      to="/notifications"
+      onClick={() => setOpen(false)}
+      className="block text-center py-2.5 text-xs text-brand-400 hover:bg-white/5 transition-colors font-medium border-b border-white/[0.05]"
+    >
+      View all notifications
+    </Link>
+  )}
+
+  {/* User profile card */}
+  <div className="px-3 py-2.5 flex items-center gap-2.5">
+    <Avatar src={user?.avatar} name={user?.name} size="sm" />
+    <div className="flex-1 min-w-0">
+      <p className="text-sm font-medium text-slate-200 truncate">
+        {user?.name}
+      </p>
+      <p className="text-xs text-slate-500 capitalize truncate">
+        {user?.role || "Player"}
+      </p>
+    </div>
+  </div>
+
+  {/* Action row */}
+  <div className="flex items-center border-t border-white/[0.05]">
+    <Link
+      to="/profile"
+      onClick={() => setOpen(false)}
+      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-colors border-r border-white/[0.05]"
+    >
+      <User size={13} /> Profile
+    </Link>
+    <button
+      onClick={handleLogout}
+      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs text-red-400 hover:text-red-300 hover:bg-red-900/20 transition-colors"
+    >
+      <LogOut size={13} /> Logout
+    </button>
+  </div>
+</div>
             </motion.div>
           </>
         )}
