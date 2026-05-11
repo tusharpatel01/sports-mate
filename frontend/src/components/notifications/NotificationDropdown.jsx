@@ -83,6 +83,16 @@ const handleLogout = async () => {
   toast.success("Logged out.");
 };
 
+const handleMarkAll = async () => {
+  try {
+    await api.put("/notifications/read-all");
+    dispatch(markAllRead());
+    toast.success("All notifications marked as read");
+  } catch (error) {
+    toast.error("Failed to mark notifications");
+  }
+};
+
   const recent = notifications.slice(0, 8);
 
   return (
