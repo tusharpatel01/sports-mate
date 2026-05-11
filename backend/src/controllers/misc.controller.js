@@ -95,9 +95,10 @@ exports.getNotifications = asyncHandler(async (req, res) => {
     .populate("sender", "name avatar")
     .populate("match", "title sport")
     .sort({ createdAt: -1 })
-    .limit(50);
+    .limit(50)
+    .lean();
 
-  res.json({ success: true, data: notifications });
+  res.json({ success: true, data: notifications||[] });
 });
 
 exports.markAsRead = asyncHandler(async (req, res) => {
