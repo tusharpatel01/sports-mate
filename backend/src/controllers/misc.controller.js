@@ -3,6 +3,7 @@ const Match = require("../models/Match");
 const { Notification, Review, Report } = require("../models/index");
 const { asyncHandler, AppError } = require("../utils/helpers");
 const { cloudinary } = require("../config/cloudinary");
+const admin = require("../config/firebase");
 
 // ══════════════════════════════════════════════════════════
 // USER CONTROLLER
@@ -32,6 +33,49 @@ exports.updateProfile = asyncHandler(async (req, res) => {
 
   const user = await User.findByIdAndUpdate(req.user._id, updates, { new: true, runValidators: true });
   res.json({ success: true, data: user.toPublicJSON() });
+});
+
+
+
+// POST /api/users/verify-phone
+// Body: { idToken } — Firebase ID token from successful phone OTP
+exports.verifyPhone = asyncHandler(async (req, res, next) => {
+  const { idToken } = req.body;
+  if (!idToken) return next(new AppError("Missing Firebase ID token.", 400));
+
+  let decoded;
+  try {
+    decoded = await admin.auth().verifyIdToken(idToken);
+  } catch (err) {
+    return next(new AppError("Invalid or expired verification token.", 401));
+  }
+
+  const phoneNumber = decoded.phone_number;
+  if (!phoneNumber) {
+    return next(new AppError("This token has no phone number attached.", 400));
+  }
+
+  // Optional: prevent same phone from being verified on multiple accounts
+  const existing = await User.findOne({
+    phone: phoneNumber,
+    _id: { $ne: req.user._id },
+    isPhoneVerified: true,
+  });
+  if (existing) {
+    return next(new AppError("This phone is already linked to another account.", 409));
+  }
+
+  // Update user
+  req.user.phone = phoneNumber;
+  req.user.isPhoneVerified = true;
+  req.user.phoneVerifiedAt = new Date();
+  await req.user.save({ validateBeforeSave: false });
+
+  res.json({
+    success: true,
+    message: "Phone verified successfully.",
+    data: req.user.toPublicJSON(),
+  });
 });
 
 // PUT /api/users/avatar

@@ -3,26 +3,46 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  MapPin, Calendar, Users, IndianRupee, Clock, Star, Shield,
-  MessageCircle, Share2, Bookmark, ChevronLeft, Trash2, Send,
-  CheckCircle, XCircle, UserX, LogOut,
+  MapPin,
+  Calendar,
+  Users,
+  IndianRupee,
+  Clock,
+  Star,
+  Shield,
+  MessageCircle,
+  Share2,
+  Bookmark,
+  ChevronLeft,
+  Trash2,
+  Send,
+  CheckCircle,
+  XCircle,
+  UserX,
+  LogOut,
 } from "lucide-react";
 import {
-  fetchMatchById, selectCurrentMatch, selectMatchLoading,
+  fetchMatchById,
+  selectCurrentMatch,
+  selectMatchLoading,
 } from "../features/matches/matchSlice";
 import { selectCurrentUser } from "../features/auth/authSlice";
-import {
-  formatMatchDate, formatCurrency, getSkillColor,
-} from "../utils";
+import { formatMatchDate, formatCurrency, getSkillColor } from "../utils";
 import { useLocalStorage } from "../hooks";
 import Avatar from "../components/common/Avatar";
 import { MatchMap } from "../components/common/MatchMap";
 import {
-  SportBadge, StatusBadge, Modal, ConfirmDialog, Spinner,
+  SportBadge,
+  StatusBadge,
+  Modal,
+  ConfirmDialog,
+  Spinner,
 } from "../components/common";
 import JoinRequestCard from "../components/match/JoinRequestCard";
 import api from "../api/axios";
 import toast from "react-hot-toast";
+
+import VerifiedBadge from "../components/common/VerifiedBadge";
 
 export default function MatchDetail() {
   const { id } = useParams();
@@ -43,7 +63,9 @@ export default function MatchDetail() {
   const [saved, setSaved] = useLocalStorage("pm_saved_matches", []);
   const isSaved = saved.includes(id);
 
-  useEffect(() => { dispatch(fetchMatchById(id)); }, [id, dispatch]);
+  useEffect(() => {
+    dispatch(fetchMatchById(id));
+  }, [id, dispatch]);
 
   if (loading || !match) {
     return (
@@ -62,7 +84,10 @@ export default function MatchDetail() {
   const handleJoinRequest = async () => {
     setActionLoading(true);
     try {
-      await api.post("/join-requests", { matchId: match._id, message: joinMsg });
+      await api.post("/join-requests", {
+        matchId: match._id,
+        message: joinMsg,
+      });
       toast.success("Join request sent! 🎯");
       setShowJoinModal(false);
       setJoinMsg("");
@@ -79,7 +104,9 @@ export default function MatchDetail() {
       const { data } = await api.get(`/join-requests/match/${match._id}`);
       setRequests(data.data);
       setShowRequests(true);
-    } catch { toast.error("Failed to load requests"); }
+    } catch {
+      toast.error("Failed to load requests");
+    }
   };
 
   const handleDelete = async () => {
@@ -87,7 +114,9 @@ export default function MatchDetail() {
       await api.delete(`/matches/${match._id}`);
       toast.success("Match deleted.");
       navigate("/home");
-    } catch { toast.error("Failed to delete match."); }
+    } catch {
+      toast.error("Failed to delete match.");
+    }
   };
 
   const handleLeave = async () => {
@@ -106,9 +135,13 @@ export default function MatchDetail() {
 
   const handleDirectMessage = async () => {
     try {
-      const { data } = await api.post("/chats/direct", { userId: match.organizer._id });
+      const { data } = await api.post("/chats/direct", {
+        userId: match.organizer._id,
+      });
       navigate(`/chat/${data.data._id}`);
-    } catch { toast.error("Failed to open chat"); }
+    } catch {
+      toast.error("Failed to open chat");
+    }
   };
 
   const handleShare = async () => {
@@ -119,12 +152,16 @@ export default function MatchDetail() {
       url,
     };
     if (navigator.share) {
-      try { await navigator.share(shareData); } catch {}
+      try {
+        await navigator.share(shareData);
+      } catch {}
     } else {
       try {
         await navigator.clipboard.writeText(url);
         toast.success("Link copied! 🔗");
-      } catch { toast.error("Could not copy link."); }
+      } catch {
+        toast.error("Could not copy link.");
+      }
     }
   };
 
@@ -147,7 +184,10 @@ export default function MatchDetail() {
         <ChevronLeft size={16} /> Back
       </button>
 
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
         {/* Title card */}
         <div className="card p-4 sm:p-6 mb-4">
           <div className="flex items-start justify-between gap-3 mb-4">
@@ -173,7 +213,11 @@ export default function MatchDetail() {
             </div>
 
             <div className="flex gap-1 flex-shrink-0">
-              <button onClick={handleShare} className="btn-ghost p-2" title="Share">
+              <button
+                onClick={handleShare}
+                className="btn-ghost p-2"
+                title="Share"
+              >
                 <Share2 size={16} />
               </button>
               <button
@@ -204,19 +248,36 @@ export default function MatchDetail() {
           {/* Stats grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-5">
             {[
-              { icon: Users, label: "Spots",
+              {
+                icon: Users,
+                label: "Spots",
                 value: isFull ? "Full" : `${spotsLeft}/${match.totalSlots}`,
-                color: isFull ? "text-red-400" : "text-brand-400" },
-              { icon: Calendar, label: "Date",
-                value: formatMatchDate(match.date), color: "text-slate-200" },
-              { icon: Clock, label: "Time",
-                value: match.startTime, color: "text-slate-200" },
-              { icon: IndianRupee, label: "Entry",
-                value: formatCurrency(match.entryFee || 0), color: "text-slate-200" },
+                color: isFull ? "text-red-400" : "text-brand-400",
+              },
+              {
+                icon: Calendar,
+                label: "Date",
+                value: formatMatchDate(match.date),
+                color: "text-slate-200",
+              },
+              {
+                icon: Clock,
+                label: "Time",
+                value: match.startTime,
+                color: "text-slate-200",
+              },
+              {
+                icon: IndianRupee,
+                label: "Entry",
+                value: formatCurrency(match.entryFee || 0),
+                color: "text-slate-200",
+              },
             ].map(({ icon: Icon, label, value, color }) => (
               <div key={label} className="bg-white/5 rounded-xl p-2.5 sm:p-3">
                 <Icon size={12} className="text-slate-500 mb-1" />
-                <p className={`text-xs sm:text-sm font-bold ${color} truncate`}>{value}</p>
+                <p className={`text-xs sm:text-sm font-bold ${color} truncate`}>
+                  {value}
+                </p>
                 <p className="text-[10px] sm:text-xs text-slate-500">{label}</p>
               </div>
             ))}
@@ -235,7 +296,9 @@ export default function MatchDetail() {
                 {match.location?.address}
               </p>
               {match.location?.city && (
-                <p className="text-[11px] text-slate-500">{match.location.city}</p>
+                <p className="text-[11px] text-slate-500">
+                  {match.location.city}
+                </p>
               )}
             </div>
           </div>
@@ -243,15 +306,16 @@ export default function MatchDetail() {
           {/* Skill chips */}
           <div className="flex gap-2 flex-wrap mb-5">
             {match.skillRequired !== "any" && (
-              <span className={`text-[11px] px-3 py-1 rounded-full bg-white/5 ${getSkillColor(match.skillRequired)} font-medium capitalize`}>
+              <span
+                className={`text-[11px] px-3 py-1 rounded-full bg-white/5 ${getSkillColor(match.skillRequired)} font-medium capitalize`}
+              >
                 <Shield size={10} className="inline mr-1" />
                 {match.skillRequired} required
               </span>
             )}
             {match.duration && (
               <span className="text-[11px] px-3 py-1 rounded-full bg-white/5 text-slate-400">
-                <Clock size={10} className="inline mr-1" />
-                ~{match.duration} min
+                <Clock size={10} className="inline mr-1" />~{match.duration} min
               </span>
             )}
           </div>
@@ -311,56 +375,69 @@ export default function MatchDetail() {
               </>
             )}
 
-            {!myStatus.isOrganizer && !myStatus.isParticipant && myStatus.requestStatus === "pending" && (
-              <button disabled className="btn-secondary flex items-center justify-center gap-2 flex-1 opacity-80">
-                <Clock size={15} /> Request Pending
-              </button>
-            )}
+            {!myStatus.isOrganizer &&
+              !myStatus.isParticipant &&
+              myStatus.requestStatus === "pending" && (
+                <button
+                  disabled
+                  className="btn-secondary flex items-center justify-center gap-2 flex-1 opacity-80"
+                >
+                  <Clock size={15} /> Request Pending
+                </button>
+              )}
 
-            {!myStatus.isOrganizer && !myStatus.isParticipant && myStatus.requestStatus === "rejected" && (
-              <>
+            {!myStatus.isOrganizer &&
+              !myStatus.isParticipant &&
+              myStatus.requestStatus === "rejected" && (
+                <>
+                  <button
+                    onClick={() => setShowJoinModal(true)}
+                    className="btn-primary flex items-center justify-center gap-2 flex-1"
+                  >
+                    <Send size={15} /> Send Again
+                  </button>
+                  <button
+                    onClick={handleDirectMessage}
+                    className="btn-secondary flex items-center justify-center gap-2"
+                  >
+                    <MessageCircle size={15} /> Message Host
+                  </button>
+                </>
+              )}
+
+            {!myStatus.isOrganizer &&
+              !myStatus.isParticipant &&
+              !myStatus.requestStatus && (
+                <>
+                  <button
+                    onClick={() =>
+                      match.status === "open" && setShowJoinModal(true)
+                    }
+                    disabled={match.status !== "open"}
+                    className="btn-primary flex items-center justify-center gap-2 flex-1"
+                  >
+                    <Send size={15} />
+                    {isFull ? "Join Waitlist" : "Request to Join"}
+                  </button>
+                  <button
+                    onClick={handleDirectMessage}
+                    className="btn-secondary flex items-center justify-center gap-2"
+                  >
+                    <MessageCircle size={15} /> Message Host
+                  </button>
+                </>
+              )}
+
+            {!myStatus.isOrganizer &&
+              !myStatus.isParticipant &&
+              myStatus.requestStatus === "cancelled" && (
                 <button
                   onClick={() => setShowJoinModal(true)}
                   className="btn-primary flex items-center justify-center gap-2 flex-1"
                 >
-                  <Send size={15} /> Send Again
+                  <Send size={15} /> Request Again
                 </button>
-                <button
-                  onClick={handleDirectMessage}
-                  className="btn-secondary flex items-center justify-center gap-2"
-                >
-                  <MessageCircle size={15} /> Message Host
-                </button>
-              </>
-            )}
-
-            {!myStatus.isOrganizer && !myStatus.isParticipant && !myStatus.requestStatus && (
-              <>
-                <button
-                  onClick={() => match.status === "open" && setShowJoinModal(true)}
-                  disabled={match.status !== "open"}
-                  className="btn-primary flex items-center justify-center gap-2 flex-1"
-                >
-                  <Send size={15} />
-                  {isFull ? "Join Waitlist" : "Request to Join"}
-                </button>
-                <button
-                  onClick={handleDirectMessage}
-                  className="btn-secondary flex items-center justify-center gap-2"
-                >
-                  <MessageCircle size={15} /> Message Host
-                </button>
-              </>
-            )}
-
-            {!myStatus.isOrganizer && !myStatus.isParticipant && myStatus.requestStatus === "cancelled" && (
-              <button
-                onClick={() => setShowJoinModal(true)}
-                className="btn-primary flex items-center justify-center gap-2 flex-1"
-              >
-                <Send size={15} /> Request Again
-              </button>
-            )}
+              )}
           </div>
         </div>
 
@@ -371,7 +448,11 @@ export default function MatchDetail() {
               lat={lat}
               lng={lng}
               address={match.location?.address}
-              height={typeof window !== "undefined" && window.innerWidth < 640 ? 220 : 280}
+              height={
+                typeof window !== "undefined" && window.innerWidth < 640
+                  ? 220
+                  : 280
+              }
             />
           </div>
         )}
@@ -382,13 +463,23 @@ export default function MatchDetail() {
             Organizer
           </p>
           <div className="flex items-center gap-3">
-            <Avatar src={match.organizer?.avatar} name={match.organizer?.name} size="md" />
+            <Avatar
+              src={match.organizer?.avatar}
+              name={match.organizer?.name}
+              size="md"
+            />
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm truncate">{match.organizer?.name}</p>
+              <p className="font-semibold text-sm truncate flex items-center gap-1.5">
+                <span className="truncate">{match.organizer?.name}</span>
+                <VerifiedBadge user={match.organizer} size={13} />
+              </p>
               <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                 {match.organizer?.averageRating > 0 && (
                   <span className="flex items-center gap-1 text-xs text-slate-400">
-                    <Star size={10} className="text-yellow-400 fill-yellow-400" />
+                    <Star
+                      size={10}
+                      className="text-yellow-400 fill-yellow-400"
+                    />
                     {match.organizer.averageRating}
                   </span>
                 )}
@@ -420,8 +511,12 @@ export default function MatchDetail() {
             <div className="space-y-2.5">
               {match.participants.map(({ user: participant }) => (
                 <div key={participant?._id} className="flex items-center gap-3">
-                  <Link to={`/profile/${participant?._id}`}>
-                    <Avatar src={participant?.avatar} name={participant?.name} size="sm" />
+                  <Link
+                    to={`/profile/${participant?._id}`}
+                    className="text-sm font-medium text-slate-200 truncate hover:text-brand-400 flex items-center gap-1"
+                  >
+                    <span className="truncate">{participant?.name}</span>
+                    <VerifiedBadge user={participant} size={11} />
                   </Link>
                   <div className="flex-1 min-w-0">
                     <Link
@@ -448,11 +543,13 @@ export default function MatchDetail() {
                           if (!confirm(`Remove ${participant.name}?`)) return;
                           try {
                             await api.delete(
-                              `/join-requests/match/${match._id}/player/${participant._id}`
+                              `/join-requests/match/${match._id}/player/${participant._id}`,
                             );
                             toast.success("Player removed.");
                             dispatch(fetchMatchById(id));
-                          } catch { toast.error("Failed."); }
+                          } catch {
+                            toast.error("Failed.");
+                          }
                         }}
                         className="text-slate-500 hover:text-red-400 transition-colors p-1"
                       >
@@ -475,7 +572,9 @@ export default function MatchDetail() {
             <div className="space-y-2">
               {match.waitingList.map(({ user: w }, i) => (
                 <div key={w?._id} className="flex items-center gap-2.5">
-                  <span className="text-[10px] text-slate-600 w-4">#{i + 1}</span>
+                  <span className="text-[10px] text-slate-600 w-4">
+                    #{i + 1}
+                  </span>
                   <Avatar src={w?.avatar} name={w?.name} size="xs" />
                   <p className="text-sm text-slate-300 truncate">{w?.name}</p>
                 </div>
@@ -486,12 +585,20 @@ export default function MatchDetail() {
       </motion.div>
 
       {/* Modals */}
-      <Modal open={showJoinModal} onClose={() => setShowJoinModal(false)} title="Send Join Request" size="sm">
+      <Modal
+        open={showJoinModal}
+        onClose={() => setShowJoinModal(false)}
+        title="Send Join Request"
+        size="sm"
+      >
         <p className="text-slate-400 text-sm mb-4">
-          Send a request to join <strong className="text-slate-200">{match.title}</strong>.
+          Send a request to join{" "}
+          <strong className="text-slate-200">{match.title}</strong>.
         </p>
         <div className="mb-4">
-          <label className="text-xs text-slate-400 mb-1.5 block">Message (optional)</label>
+          <label className="text-xs text-slate-400 mb-1.5 block">
+            Message (optional)
+          </label>
           <textarea
             value={joinMsg}
             onChange={(e) => setJoinMsg(e.target.value)}
@@ -500,20 +607,35 @@ export default function MatchDetail() {
             rows={3}
             maxLength={200}
           />
-          <p className="text-[10px] text-slate-600 text-right mt-1">{joinMsg.length}/200</p>
+          <p className="text-[10px] text-slate-600 text-right mt-1">
+            {joinMsg.length}/200
+          </p>
         </div>
         <button
           onClick={handleJoinRequest}
           disabled={actionLoading}
           className="btn-primary w-full flex items-center justify-center gap-2"
         >
-          {actionLoading ? <Spinner size={16} /> : <><Send size={15} /> Send Request</>}
+          {actionLoading ? (
+            <Spinner size={16} />
+          ) : (
+            <>
+              <Send size={15} /> Send Request
+            </>
+          )}
         </button>
       </Modal>
 
-      <Modal open={showRequests} onClose={() => setShowRequests(false)} title={`Join Requests (${requests.length})`} size="md">
+      <Modal
+        open={showRequests}
+        onClose={() => setShowRequests(false)}
+        title={`Join Requests (${requests.length})`}
+        size="md"
+      >
         {requests.length === 0 ? (
-          <p className="text-slate-500 text-sm text-center py-8">No pending requests.</p>
+          <p className="text-slate-500 text-sm text-center py-8">
+            No pending requests.
+          </p>
         ) : (
           <div className="space-y-3 max-h-96 overflow-y-auto">
             <AnimatePresence>

@@ -2,7 +2,15 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 
-const SPORTS = ["cricket", "football", "basketball", "badminton", "volleyball", "tennis", "other"];
+const SPORTS = [
+  "cricket",
+  "football",
+  "basketball",
+  "badminton",
+  "volleyball",
+  "tennis",
+  "other",
+];
 const SKILL_LEVELS = ["beginner", "intermediate", "advanced"];
 const ROLES = ["player", "organizer", "admin"];
 
@@ -22,6 +30,16 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       match: [/^\S+@\S+\.\S+$/, "Please enter a valid email"],
     },
+    phone: {
+      type: String,
+      trim: true,
+      match: [/^\+\d{10,15}$/, "Phone must include country code, e.g. +91..."],
+      sparse: true, // allows multiple users with no phone, but unique among those who set it
+      unique: true,
+    },
+    isPhoneVerified: { type: Boolean, default: false },
+    phoneVerifiedAt: { type: Date },
+
     password: {
       type: String,
       required: [true, "Password is required"],
@@ -34,7 +52,10 @@ const userSchema = new mongoose.Schema(
     avatar: { type: String, default: "" },
     avatarPublicId: { type: String, default: "" },
     age: { type: Number, min: 13, max: 100 },
-    gender: { type: String, enum: ["male", "female", "other", "prefer_not_to_say"] },
+    gender: {
+      type: String,
+      enum: ["male", "female", "other", "prefer_not_to_say"],
+    },
     bio: { type: String, maxlength: 300 },
     skillLevel: { type: String, enum: SKILL_LEVELS, default: "beginner" },
     preferredSports: [{ type: String, enum: SPORTS }],
@@ -79,7 +100,7 @@ const userSchema = new mongoose.Schema(
 
     lastSeen: { type: Date, default: Date.now },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // ─── Geo index ────────────────────────────────────────────
@@ -101,14 +122,20 @@ userSchema.methods.matchPassword = async function (entered) {
 
 userSchema.methods.getEmailVerificationToken = function () {
   const token = crypto.randomBytes(32).toString("hex");
-  this.emailVerificationToken = crypto.createHash("sha256").update(token).digest("hex");
+  this.emailVerificationToken = crypto
+    .createHash("sha256")
+    .update(token)
+    .digest("hex");
   this.emailVerificationExpire = Date.now() + 24 * 60 * 60 * 1000; // 24h
   return token;
 };
 
 userSchema.methods.getPasswordResetToken = function () {
   const token = crypto.randomBytes(32).toString("hex");
-  this.passwordResetToken = crypto.createHash("sha256").update(token).digest("hex");
+  this.passwordResetToken = crypto
+    .createHash("sha256")
+    .update(token)
+    .digest("hex");
   this.passwordResetExpire = Date.now() + 60 * 60 * 1000; // 1h
   return token;
 };
@@ -131,6 +158,10 @@ userSchema.methods.toPublicJSON = function () {
     matchesOrganised: this.matchesOrganised,
     averageRating: this.averageRating,
     isEmailVerified: this.isEmailVerified,
+
+     phone: this.phone,
+  isPhoneVerified: this.isPhoneVerified,
+  
     createdAt: this.createdAt,
   };
 };

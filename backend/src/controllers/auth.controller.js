@@ -135,3 +135,44 @@ exports.resetPassword = asyncHandler(async (req, res, next) => {
 
   sendTokenResponse(user, 200, res);
 });
+
+
+// POST /api/auth/resend-verification
+exports.resendVerification = asyncHandler(async (req, res, next) => {
+  const user = await User.findById(req.user._id);
+  if (!user) return next(new AppError("User not found.", 404));
+  if (user.isEmailVerified) {
+    return next(new AppError("Email is already verified.", 400));
+  }
+
+  // Rate-limit: don't allow resending if last email was less than 60 seconds ago
+  if (user.emailVerificationExpire) {
+    const lastSent =
+      new Date(user.emailVerificationExpire).getTime() - 24 * 60 * 60 * 1000;
+    const secondsSince = (Date.now() - lastSent) / 1000;
+    if (secondsSince < 60) {
+      return next(
+        new AppError(
+          `Please wait ${Math.ceil(60 - secondsSince)} seconds before requesting another email.`,
+          429
+        )
+      );
+    }
+  }
+
+  const verificationToken = user.getEmailVerificationToken();
+  await user.save({ validateBeforeSave: false });
+
+  const verifyUrl = `${process.env.CLIENT_URL}/verify-email/${verificationToken}`;
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: "Verify your PlayMate account",
+      html: emailVerificationTemplate(user.name, verifyUrl),
+    });
+    res.json({ success: true, message: "Verification email sent. Check your inbox." });
+  } catch (err) {
+    console.error("Resend email error:", err);
+    return next(new AppError("Failed to send email. Try again later.", 500));
+  }
+});

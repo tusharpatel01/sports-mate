@@ -50,7 +50,7 @@ exports.getMatches = asyncHandler(async (req, res) => {
   const matches = await query
     .skip(skip)
     .limit(parseInt(limit))
-    .populate("organizer", "name avatar averageRating skillLevel")
+    .populate("organizer", "name avatar averageRating skillLevel isEmailVerified")
     .lean();
 
   res.json({
@@ -67,9 +67,9 @@ exports.getMatchById = asyncHandler(async (req, res, next) => {
     { $inc: { viewCount: 1 } },
     { new: true }
   )
-    .populate("organizer", "name avatar averageRating skillLevel bio")
-    .populate("participants.user", "name avatar skillLevel averageRating")
-    .populate("waitingList.user", "name avatar")
+    .populate("organizer", "name avatar averageRating skillLevel bio isEmailVerified")
+    .populate("participants.user", "name avatar skillLevel averageRating isEmailVerified")
+    .populate("waitingList.user", "name avatar isEmailVerified")
     .lean();
 
   if (!match) return next(new AppError("Match not found.", 404));

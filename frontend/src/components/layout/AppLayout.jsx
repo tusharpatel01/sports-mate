@@ -10,6 +10,7 @@ import { selectTotalUnread } from "../../features/chat/chatSlice";
 import Avatar from "../common/Avatar";
 import NotificationDropdown from "../notifications/NotificationDropdown";
 import toast from "react-hot-toast";
+import VerifyEmailBanner from "../common/VerifyEmailBanner";
 
 const NAV = [
   { to: "/home",    icon: Home,          label: "Home" },
@@ -118,6 +119,7 @@ export default function AppLayout() {
 
       {/* ─── Main content ────────────────────────────── */}
       <main className="flex-1 overflow-y-auto pt-14 md:pt-0 pb-16 md:pb-0">
+        <VerifyEmailBanner />
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}

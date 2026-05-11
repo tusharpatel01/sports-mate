@@ -68,7 +68,7 @@ exports.getMatchRequests = asyncHandler(async (req, res, next) => {
   }
 
   const requests = await JoinRequest.find({ match: req.params.matchId, status: "pending" })
-    .populate("player", "name avatar skillLevel averageRating matchesPlayed bio")
+   .populate("player", "name avatar skillLevel averageRating matchesPlayed bio isEmailVerified")
     .sort({ createdAt: -1 });
 
   res.json({ success: true, data: requests });

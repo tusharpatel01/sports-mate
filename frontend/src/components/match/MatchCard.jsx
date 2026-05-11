@@ -1,11 +1,10 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { MapPin, Calendar, Users, IndianRupee, Star } from "lucide-react";
-import {
-  formatMatchDate, formatCurrency,
-} from "../../utils";
+import { formatMatchDate, formatCurrency } from "../../utils";
 import { SportBadge, StatusBadge } from "../common";
 import Avatar from "../common/Avatar";
+import VerifiedBadge from "../common/VerifiedBadge";
 
 export default function MatchCard({ match, index = 0 }) {
   const spotsLeft = match.totalSlots - (match.participants?.length || 0);
@@ -35,7 +34,9 @@ export default function MatchCard({ match, index = 0 }) {
             <div className="flex items-center gap-1.5 text-xs text-slate-400">
               <MapPin size={11} className="text-slate-500 flex-shrink-0" />
               <span className="truncate">
-                {match.location?.address || match.location?.city || "Location TBD"}
+                {match.location?.address ||
+                  match.location?.city ||
+                  "Location TBD"}
               </span>
             </div>
             <div className="flex items-center gap-1.5 text-xs text-slate-400">
@@ -84,12 +85,16 @@ export default function MatchCard({ match, index = 0 }) {
                 size="xs"
               />
               <div className="min-w-0">
-                <p className="text-xs text-slate-400 truncate">
-                  {match.organizer?.name}
+                <p className="text-xs text-slate-400 truncate flex items-center gap-1">
+                  <span className="truncate">{match.organizer?.name}</span>
+                  <VerifiedBadge user={match.organizer} size={10} />
                 </p>
                 {match.organizer?.averageRating > 0 && (
                   <div className="flex items-center gap-0.5">
-                    <Star size={9} className="text-yellow-400 fill-yellow-400" />
+                    <Star
+                      size={9}
+                      className="text-yellow-400 fill-yellow-400"
+                    />
                     <span className="text-[10px] text-slate-500">
                       {match.organizer.averageRating}
                     </span>

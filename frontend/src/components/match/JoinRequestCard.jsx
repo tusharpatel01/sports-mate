@@ -5,6 +5,7 @@ import Avatar from "../common/Avatar";
 import { getSkillColor, timeAgo } from "../../utils";
 import api from "../../api/axios";
 import toast from "react-hot-toast";
+import VerifiedBadge from "../common/VerifiedBadge";
 
 export default function JoinRequestCard({ request, onUpdate }) {
   const [loading, setLoading] = useState(null);
@@ -14,7 +15,9 @@ export default function JoinRequestCard({ request, onUpdate }) {
     setLoading(action);
     try {
       await api.put(`/join-requests/${request._id}/${action}`);
-      toast.success(action === "accept" ? "Request accepted! 🎉" : "Request rejected.");
+      toast.success(
+        action === "accept" ? "Request accepted! 🎉" : "Request rejected.",
+      );
       onUpdate?.(request._id, action);
     } catch (err) {
       toast.error(err.response?.data?.message || "Something went wrong");
@@ -34,10 +37,13 @@ export default function JoinRequestCard({ request, onUpdate }) {
         <Avatar src={player?.avatar} name={player?.name} size="md" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold text-slate-100 text-sm truncate">
-              {player?.name}
+            <span className="font-semibold text-slate-100 text-sm truncate flex items-center gap-1">
+              <span className="truncate">{player?.name}</span>
+              <VerifiedBadge user={player} size={11} />
             </span>
-            <span className={`text-xs font-medium capitalize ${getSkillColor(player?.skillLevel)}`}>
+            <span
+              className={`text-xs font-medium capitalize ${getSkillColor(player?.skillLevel)}`}
+            >
               {player?.skillLevel}
             </span>
             {player?.averageRating > 0 && (
@@ -48,7 +54,9 @@ export default function JoinRequestCard({ request, onUpdate }) {
             )}
           </div>
           {player?.bio && (
-            <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{player.bio}</p>
+            <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
+              {player.bio}
+            </p>
           )}
           <div className="flex items-center gap-2 mt-1 text-xs text-slate-500 flex-wrap">
             <span>{player?.matchesPlayed || 0} matches</span>
