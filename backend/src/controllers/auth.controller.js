@@ -17,18 +17,27 @@ exports.register = asyncHandler(async (req, res, next) => {
 
   const user = await User.create({ name, email, password });
 
-  // Send verification email
+  // Generate verification token
   const verificationToken = user.getEmailVerificationToken();
   await user.save({ validateBeforeSave: false });
 
-  const verifyUrl = `${process.env.CLIENT_URL}/verify-email/${verificationToken}`;
-  await sendEmail({
-    to: user.email,
-    subject: "Verify your PlayMate account",
-    html: emailVerificationTemplate(user.name, verifyUrl),
-  }).catch(() => {}); // non-blocking
-
+  // Send response IMMEDIATELY — don't wait for email
   sendTokenResponse(user, 201, res);
+
+  // Fire email AFTER response is sent — completely non-blocking
+  const verifyUrl = `${process.env.CLIENT_URL?.split(",")[0]}/verify-email/${verificationToken}`;
+  setImmediate(async () => {
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: "Verify your PlayMate account",
+        html: emailVerificationTemplate(user.name, verifyUrl),
+      });
+      console.log(`✅ Verification email sent to ${user.email}`);
+    } catch (err) {
+      console.error(`⚠️ Email send failed for ${user.email}:`, err.message);
+    }
+  });
 });
 
 // POST /api/auth/login
@@ -107,7 +116,7 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
   const resetToken = user.getPasswordResetToken();
   await user.save({ validateBeforeSave: false });
 
-  const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+  const resetUrl = `${process.env.CLIENT_URL?.split(",")[0]}/reset-password/${resetToken}`;
   await sendEmail({
     to: user.email,
     subject: "PlayMate — Password Reset",
