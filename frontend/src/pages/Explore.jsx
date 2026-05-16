@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Search, Map, List, Loader } from "lucide-react";
@@ -30,11 +30,29 @@ export default function Explore() {
     dispatch(fetchMatches(params));
   }, [debouncedSearch, filters, location, dispatch]);
 
+  // ─── Client-side sort by organizer rating ────────────
+  // Backend can't sort by populated field directly, so we sort here
+  const displayedMatches = useMemo(() => {
+    if (filters.sort === "rating") {
+      return [...matches].sort((a, b) => {
+        const ratingA = a.organizer?.averageRating || 0;
+        const ratingB = b.organizer?.averageRating || 0;
+        if (ratingB !== ratingA) return ratingB - ratingA;
+        // Tiebreaker: more total reviews wins
+        return (b.organizer?.totalReviews || 0) - (a.organizer?.totalReviews || 0);
+      });
+    }
+    return matches;
+  }, [matches, filters.sort]);
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6 pb-24 md:pb-6">
+      {/* ─── Header ───────────────────────────────── */}
       <div className="flex items-center justify-between gap-3 mb-5 sm:mb-6">
         <div className="min-w-0">
-          <h1 className="text-xl sm:text-2xl font-black tracking-tight">Explore Matches</h1>
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight">
+            Explore Matches
+          </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
             Find the perfect game near you
           </p>
@@ -61,6 +79,7 @@ export default function Explore() {
         </div>
       </div>
 
+      {/* ─── Search bar ───────────────────────────── */}
       <div className="relative mb-4 sm:mb-5">
         <Search size={16} className="absolute left-3 sm:left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
         {loading && search && (
@@ -74,14 +93,16 @@ export default function Explore() {
         />
       </div>
 
+      {/* ─── Filters ──────────────────────────────── */}
       <div className="mb-5 sm:mb-6">
         <MatchFilters filters={filters} onChange={setFilters} />
       </div>
 
+      {/* ─── Map view ─────────────────────────────── */}
       {view === "map" && (
         <div className="mb-5 sm:mb-6">
           <MatchesMap
-            matches={matches}
+            matches={displayedMatches}
             userLocation={location}
             height={typeof window !== "undefined" && window.innerWidth < 640 ? 320 : 420}
             onMarkerClick={(m) => navigate(`/matches/${m._id}`)}
@@ -89,20 +110,27 @@ export default function Explore() {
         </div>
       )}
 
+      {/* ─── Result count + sort indicator ───────── */}
       <div className="flex items-center justify-between mb-3 sm:mb-4">
         <p className="text-xs sm:text-sm text-slate-500">
           {loading
             ? "Searching..."
-            : `${matches.length} result${matches.length !== 1 ? "s" : ""}`}
+            : `${displayedMatches.length} result${displayedMatches.length !== 1 ? "s" : ""}`}
           {debouncedSearch && ` for "${debouncedSearch}"`}
         </p>
+        {filters.sort === "rating" && displayedMatches.length > 0 && (
+          <p className="text-[11px] text-brand-400 flex items-center gap-1">
+            ⭐ Sorted by top-rated organizers
+          </p>
+        )}
       </div>
 
-      {loading && matches.length === 0 ? (
+      {/* ─── Match grid ───────────────────────────── */}
+      {loading && displayedMatches.length === 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
         </div>
-      ) : matches.length === 0 ? (
+      ) : displayedMatches.length === 0 ? (
         <EmptyState
           icon={Search}
           title="No matches found"
@@ -110,7 +138,9 @@ export default function Explore() {
         />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-          {matches.map((m, i) => <MatchCard key={m._id} match={m} index={i} />)}
+          {displayedMatches.map((m, i) => (
+            <MatchCard key={m._id} match={m} index={i} />
+          ))}
         </div>
       )}
     </div>

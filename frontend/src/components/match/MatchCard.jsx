@@ -89,17 +89,17 @@ export default function MatchCard({ match, index = 0 }) {
                   <span className="truncate">{match.organizer?.name}</span>
                   <VerifiedBadge user={match.organizer} size={10} />
                 </p>
-                {match.organizer?.averageRating > 0 && (
-                  <div className="flex items-center gap-0.5">
-                    <Star
-                      size={9}
-                      className="text-yellow-400 fill-yellow-400"
-                    />
-                    <span className="text-[10px] text-slate-500">
-                      {match.organizer.averageRating}
-                    </span>
-                  </div>
-                )}
+               {match.organizer?.averageRating > 0 && (
+  <div className="flex items-center gap-0.5">
+    <Star size={9} className="text-yellow-400 fill-yellow-400" />
+    <span className="text-[10px] text-slate-500">
+      {match.organizer.averageRating}
+      {match.organizer.totalReviews > 0 && (
+        <span className="opacity-60"> ({match.organizer.totalReviews})</span>
+      )}
+    </span>
+  </div>
+)}
               </div>
             </div>
             <div className="text-right flex-shrink-0">

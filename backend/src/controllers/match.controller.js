@@ -41,7 +41,12 @@ exports.getMatches = asyncHandler(async (req, res) => {
     });
   } else {
     query = Match.find(filter);
-    const sortMap = { latest: { createdAt: -1 }, popular: { viewCount: -1 }, date: { date: 1 } };
+    const sortMap = { latest: { createdAt: -1 }
+    , popular: { viewCount: -1 }
+    , date: { date: 1 } 
+    , rating: { "organizer.averageRating": -1 }
+  };
+
     query = query.sort(sortMap[sort] || { createdAt: -1 });
   }
 
@@ -157,24 +162,41 @@ exports.createMatch = asyncHandler(async (req, res) => {
 });
 
 // PUT /api/matches/:id
-exports.updateMatch = asyncHandler(async (req, res, next) => {
-  const match = await Match.findById(req.params.id);
-  if (!match) return next(new AppError("Match not found.", 404));
+exports.updateMatchStatus =asyncHandler (async (match) => {
+  if (!match) return match;
+  if (["completed", "cancelled"].includes(match.status)) return match;
 
-  if (match.organizer.toString() !== req.user._id.toString() && req.user.role !== "admin") {
-    return next(new AppError("Not authorised to update this match.", 403));
+  const startTime = new Date(match.date);
+  const [hours, minutes] = (match.startTime || "00:00").split(":").map(Number);
+  startTime.setHours(hours, minutes, 0, 0);
+
+  const endTime = new Date(startTime.getTime() + (match.duration || 120) * 60000);
+  const now = new Date();
+
+  if (now > endTime && match.status !== "completed") {
+    // Match just transitioned to completed → notify participants to rate
+    const Notification = require("../models/Notification");
+    const wasNotCompletedBefore = match.status !== "completed";
+    match.status = "completed";
+
+    if (wasNotCompletedBefore && !match._ratingNotificationsSent) {
+      // Only send notifications once
+      await Notification.insertMany(
+        match.participants.map((p) => ({
+          recipient: p.user._id || p.user,
+          type:      "match_reminder",
+          title:     "Rate your teammates",
+          message:   `How was "${match.title}"? Rate your teammates to help others find great players.`,
+          match:     match._id,
+        }))
+      );
+      match._ratingNotificationsSent = true;
+    }
+  } else if (now >= startTime && now <= endTime) {
+    match.status = "in_progress";
   }
 
-  if (req.body.totalSlots && parseInt(req.body.totalSlots) < match.participants.length) {
-    return next(new AppError("Cannot reduce slots below current participant count.", 400));
-  }
-
-  const updated = await Match.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    runValidators: true,
-  }).populate("organizer", "name avatar");
-
-  res.json({ success: true, data: updated });
+  return match;
 });
 
 // DELETE /api/matches/:id
@@ -272,3 +294,4 @@ exports.getJoinedMatches = asyncHandler(async (req, res) => {
     .populate("organizer", "name avatar");
   res.json({ success: true, data: matches });
 });
+

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { MapPin, Plus, RefreshCw, AlertTriangle } from "lucide-react";
 import {
@@ -11,9 +11,12 @@ import { useGeolocation } from "../hooks";
 import MatchCard from "../components/match/MatchCard";
 import MatchFilters from "../components/match/MatchFilters";
 import { SkeletonCard, EmptyState } from "../components/common";
+import PendingRatingsPrompt from "../components/match/PendingRatingsPrompt";
+import ProfileCompletionMeter from "../components/common/ProfileCompletionMeter";
 
 export default function Home() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const user = useSelector(selectCurrentUser);
   const matches = useSelector(selectMatches);
   const loading = useSelector(selectMatchLoading);
@@ -30,7 +33,7 @@ export default function Home() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6 pb-24 md:pb-6">
-      {/* Header */}
+      {/* ─── Header ──────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -65,6 +68,20 @@ export default function Home() {
         </Link>
       </motion.div>
 
+      {/* ─── Pending ratings nudge ───────────────────── */}
+      {/* Top priority — only shown if user has unfinished ratings */}
+      <PendingRatingsPrompt />
+
+      {/* ─── Profile completion meter ────────────────── */}
+      {/* Second priority — drives engagement until 100% */}
+      {user && (
+        <ProfileCompletionMeter
+          user={user}
+          onItemClick={() => navigate("/profile")}
+        />
+      )}
+
+      {/* ─── Geo error banner ────────────────────────── */}
       {geoError && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -82,10 +99,12 @@ export default function Home() {
         </motion.div>
       )}
 
+      {/* ─── Filters ─────────────────────────────────── */}
       <div className="mb-5 sm:mb-6">
         <MatchFilters filters={filters} onChange={handleFilterChange} />
       </div>
 
+      {/* ─── Result count + refresh ──────────────────── */}
       <div className="flex items-center justify-between mb-3 sm:mb-4">
         <p className="text-xs sm:text-sm text-slate-500">
           {loading ? "Loading..." : `${matches.length} match${matches.length !== 1 ? "es" : ""} found`}
@@ -102,6 +121,7 @@ export default function Home() {
         </button>
       </div>
 
+      {/* ─── Match grid ──────────────────────────────── */}
       {loading && matches.length === 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
@@ -125,6 +145,7 @@ export default function Home() {
         </div>
       )}
 
+      {/* ─── Stats footer ────────────────────────────── */}
       {!loading && user && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}

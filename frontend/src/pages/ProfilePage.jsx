@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { motion } from "framer-motion";
 import {
   Star, Edit3, Camera, MapPin, Trophy,
-  Shield, Activity, MessageCircle, Mail, Phone, ShieldCheck, LogOut,
+  Shield, Activity, MessageCircle, Mail, Phone, ShieldCheck, LogOut,ThumbsUp,
 } from "lucide-react";
 import {
   selectCurrentUser, updateProfile, logoutUser,
@@ -287,7 +287,11 @@ const handleCompletionItemClick = (key) => {
           {[
             { icon: Activity, label: "Played",    value: user.matchesPlayed || 0 },
             { icon: Trophy,   label: "Organised", value: user.matchesOrganised || 0 },
-            { icon: Star,     label: "Rating",    value: user.averageRating > 0 ? user.averageRating : "—" },
+            {
+  icon: Star,
+  label: user.totalReviews > 0 ? `Rating · ${user.totalReviews}` : "Rating",
+  value: user.averageRating > 0 ? user.averageRating : "—",
+},
           ].map(({ icon: Icon, label, value }) => (
             <div key={label} className="card p-3 sm:p-4 text-center">
               <Icon size={14} className="text-brand-400 mx-auto mb-1.5 sm:mb-2" />
@@ -374,6 +378,25 @@ const handleCompletionItemClick = (key) => {
             </p>
           </div>
         )}
+
+        {/* "Would play again" stat — only shown if there are reviews */}
+{user.totalReviews > 0 && user.wouldPlayAgainPercent !== undefined && (
+  <div className="card p-3 sm:p-4 mb-4 flex items-center gap-3">
+    <div className="w-10 h-10 bg-brand-900/40 rounded-xl flex items-center justify-center flex-shrink-0">
+      <ThumbsUp size={16} className="text-brand-400" />
+    </div>
+    <div className="flex-1 min-w-0">
+      <div className="flex items-center gap-2">
+        <p className="text-sm font-bold text-brand-400">
+          {user.wouldPlayAgainPercent}% would play again
+        </p>
+      </div>
+      <p className="text-xs text-slate-500">
+        Based on {user.totalReviews} {user.totalReviews === 1 ? "rating" : "ratings"}
+      </p>
+    </div>
+  </div>
+)}
 
         {/* ─── Reviews ─────────────────────────────── */}
         {reviews.length > 0 && (

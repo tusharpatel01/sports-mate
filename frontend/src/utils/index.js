@@ -1,3 +1,6 @@
+
+
+
 // ─── constants.js ─────────────────────────────────────────
 export const SPORTS = [
   { value: "cricket",    label: "Cricket",    emoji: "🏏" },
@@ -31,6 +34,7 @@ export const SORT_OPTIONS = [
   { value: "latest",   label: "Latest" },
   { value: "popular",  label: "Most popular" },
   { value: "date",     label: "Upcoming" },
+  { value: "rating",   label: "Top-rated organizers" }, 
 ];
 
 // ─── helpers.js ───────────────────────────────────────────

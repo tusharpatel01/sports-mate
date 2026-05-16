@@ -61,6 +61,10 @@ const userSchema = new mongoose.Schema(
     preferredSports: [{ type: String, enum: SPORTS }],
     availability: [{ type: String }], // ["morning", "evening", "weekend"]
 
+    averageRating:           { type: Number, default: 0 },
+totalReviews:            { type: Number, default: 0 },
+wouldPlayAgainPercent:   { type: Number, default: 0 },
+
     // ─── Location ─────────────────────────────────────
     location: {
       type: {
@@ -98,6 +102,7 @@ const userSchema = new mongoose.Schema(
     passwordResetToken: String,
     passwordResetExpire: Date,
     refreshToken: { type: String, select: false },
+
 
     lastSeen: { type: Date, default: Date.now },
   },
@@ -157,6 +162,9 @@ userSchema.methods.toPublicJSON = function () {
     searchRadius: this.searchRadius,
     matchesPlayed: this.matchesPlayed,
     matchesOrganised: this.matchesOrganised,
+    // averageRating: this.averageRating,
+    totalReviews: this.totalReviews,          
+    wouldPlayAgainPercent: this.wouldPlayAgainPercent,  
     averageRating: this.averageRating,
     isEmailVerified: this.isEmailVerified,
     onboardingCompleted: this.onboardingCompleted,
