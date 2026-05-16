@@ -1,10 +1,10 @@
 import { useEffect } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { AnimatePresence } from "framer-motion";
 
 import { useAuth, useSocket } from "./hooks";
-import { selectIsAuthenticated } from "./features/auth/authSlice";
+import { selectIsAuthenticated, selectCurrentUser } from "./features/auth/authSlice";
 
 import AppLayout from "./components/layout/AppLayout";
 import Landing from "./pages/Landing";
@@ -15,6 +15,7 @@ import CreateMatch from "./pages/CreateMatch";
 import ChatPage from "./pages/ChatPage";
 import ProfilePage from "./pages/ProfilePage";
 import NotificationsPage from "./pages/NotificationsPage";
+import OnboardingPage from "./pages/Onboarding/OnboardingPage";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import LoginPage from "./pages/Auth/LoginPage";
 import RegisterPage from "./pages/Auth/RegisterPage";
@@ -28,8 +29,23 @@ import LoadingScreen from "./components/common/LoadingScreen";
 const ProtectedRoute = ({ children }) => {
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const initialized = useSelector((s) => s.auth.initialized);
+  const user = useSelector(selectCurrentUser);
+  const location = useLocation();
+
   if (!initialized) return <LoadingScreen />;
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+
+  // New users → onboarding
+  if (user && !user.onboardingCompleted && location.pathname !== "/onboarding") {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  // Onboarded users shouldn't see onboarding again
+  if (user && user.onboardingCompleted && location.pathname === "/onboarding") {
+    return <Navigate to="/home" replace />;
+  }
+
+  return children;
 };
 
 const GuestRoute = ({ children }) => {
@@ -60,6 +76,16 @@ export default function App() {
         <Route path="/forgot-password" element={<GuestRoute><ForgotPassword /></GuestRoute>} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/verify-email/:token" element={<VerifyEmail />} />
+
+        {/* Onboarding — protected but full-screen (no AppLayout wrapping) */}
+        <Route
+          path="/onboarding"
+          element={
+            <ProtectedRoute>
+              <OnboardingPage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Protected — inside AppLayout (sidebar + navbar) */}
         <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>

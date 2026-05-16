@@ -288,3 +288,46 @@ exports.adminResolveReport = asyncHandler(async (req, res, next) => {
   await report.save();
   res.json({ success: true });
 });
+
+
+
+// PUT /api/users/onboarding — Save onboarding selections in one call
+exports.completeOnboarding = asyncHandler(async (req, res, next) => {
+  const {
+    preferredSports,
+    skillLevel,
+    searchRadius,
+    location, // { lat, lng, city, address }
+  } = req.body;
+
+  // Validate
+  if (!preferredSports || preferredSports.length === 0) {
+    return next(new AppError("Please select at least one sport.", 400));
+  }
+  if (!skillLevel) {
+    return next(new AppError("Please set your skill level.", 400));
+  }
+
+  const user = req.user;
+  user.preferredSports = preferredSports;
+  user.skillLevel = skillLevel;
+  user.searchRadius = searchRadius || 10;
+  user.onboardingCompleted = true;
+
+  if (location && location.lat && location.lng) {
+    user.location = {
+      type: "Point",
+      coordinates: [location.lng, location.lat],
+      city: location.city || "",
+      address: location.address || "",
+    };
+  }
+
+  await user.save();
+
+  res.json({
+    success: true,
+    message: "Welcome to PlayMate! Your profile has been set up.",
+    data: user.toPublicJSON(),
+  });
+});

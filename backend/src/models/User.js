@@ -89,6 +89,7 @@ const userSchema = new mongoose.Schema(
 
     // ─── Auth ─────────────────────────────────────────
     isEmailVerified: { type: Boolean, default: false },
+    onboardingCompleted: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
     isBanned: { type: Boolean, default: false },
     banReason: { type: String },
@@ -158,10 +159,9 @@ userSchema.methods.toPublicJSON = function () {
     matchesOrganised: this.matchesOrganised,
     averageRating: this.averageRating,
     isEmailVerified: this.isEmailVerified,
-
-     phone: this.phone,
-  isPhoneVerified: this.isPhoneVerified,
-  
+    onboardingCompleted: this.onboardingCompleted,
+    phone: this.phone,
+    isPhoneVerified: this.isPhoneVerified,
     createdAt: this.createdAt,
   };
 };

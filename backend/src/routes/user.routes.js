@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const {
   getUserProfile, updateProfile, updateAvatar,
-  getNearbyPlayers, changePassword,verifyPhone
+  getNearbyPlayers, changePassword,verifyPhone,completeOnboarding
 } = require("../controllers/misc.controller");
 const { protect } = require("../middleware/auth");
 const { uploadAvatar } = require("../config/cloudinary");
@@ -15,5 +15,6 @@ router.put("/profile",          protect, updateProfileValidator,          update
 router.put("/avatar",           protect, uploadLimiter, uploadAvatar.single("avatar"), updateAvatar);
 router.put("/change-password",  protect,                                  changePassword);
 router.post("/verify-phone",     protect,                                 verifyPhone);
+router.put("/onboarding",        protect,                                 completeOnboarding);
 
 module.exports = router;

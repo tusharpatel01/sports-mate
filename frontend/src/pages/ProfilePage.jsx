@@ -3,34 +3,23 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { motion } from "framer-motion";
 import {
-  Star,
-  Edit3,
-  Camera,
-  MapPin,
-  Trophy,
-  Shield,
-  Activity,
-  MessageCircle,
+  Star, Edit3, Camera, MapPin, Trophy,
+  Shield, Activity, MessageCircle, Mail, Phone, ShieldCheck, LogOut,
 } from "lucide-react";
-import { selectCurrentUser, updateProfile } from "../features/auth/authSlice";
 import {
-  fetchMyMatches,
-  selectMyMatches,
+  selectCurrentUser, updateProfile, logoutUser,
+} from "../features/auth/authSlice";
+import {
+  fetchMyMatches, selectMyMatches,
 } from "../features/matches/matchSlice";
 import Avatar from "../components/common/Avatar";
 import MatchCard from "../components/match/MatchCard";
 import { Modal, Spinner } from "../components/common";
 import { SPORTS, SKILL_LEVELS, getSkillColor } from "../utils";
-import api from "../api/axios";
-import toast from "react-hot-toast";
-
 import PhoneVerifyModal from "../components/auth/PhoneVerifyModal";
 import VerifiedBadge from "../components/common/VerifiedBadge";
-import { Mail,Phone, ShieldCheck } from "lucide-react";
-
-// import VerifiedBadge from "../components/common/VerifiedBadge";
-
-// import api from "../api/axios";
+import api from "../api/axios";
+import toast from "react-hot-toast";
 
 export default function ProfilePage() {
   const { userId } = useParams();
@@ -48,8 +37,8 @@ export default function ProfilePage() {
   const [editLoading, setEditLoading] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
   const [editForm, setEditForm] = useState({});
-
   const [phoneModalOpen, setPhoneModalOpen] = useState(false);
+  const [resendingEmail, setResendingEmail] = useState(false);
 
   const user = isOwnProfile ? currentUser : profileUser;
 
@@ -58,16 +47,14 @@ export default function ProfilePage() {
       dispatch(fetchMyMatches());
     } else {
       setLoading(true);
-      api
-        .get(`/users/${userId}`)
+      api.get(`/users/${userId}`)
         .then(({ data }) => setProfileUser(data.data))
         .catch(() => toast.error("User not found"))
         .finally(() => setLoading(false));
     }
     const uid = userId || currentUser?._id;
     if (uid) {
-      api
-        .get(`/reviews/user/${uid}`)
+      api.get(`/reviews/user/${uid}`)
         .then(({ data }) => setReviews(data.data))
         .catch(() => {});
     }
@@ -100,6 +87,12 @@ export default function ProfilePage() {
     }
   };
 
+  const handleLogout = async () => {
+    await dispatch(logoutUser());
+    navigate("/");
+    toast.success("Logged out.");
+  };
+
   const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -119,6 +112,18 @@ export default function ProfilePage() {
     }
   };
 
+  const handleResendEmail = async () => {
+    setResendingEmail(true);
+    try {
+      await api.post("/auth/resend-verification");
+      toast.success("Verification email sent! Check your inbox 📩");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to send.");
+    } finally {
+      setResendingEmail(false);
+    }
+  };
+
   const toggleSport = (sport) => {
     setEditForm((f) => ({
       ...f,
@@ -128,16 +133,18 @@ export default function ProfilePage() {
     }));
   };
 
-  if (loading)
+  if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
         <Spinner size={32} />
       </div>
     );
-  if (!user)
+  }
+  if (!user) {
     return (
       <div className="text-center py-20 text-slate-500">User not found.</div>
     );
+  }
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 sm:py-6 pb-24 md:pb-6">
@@ -145,7 +152,7 @@ export default function ProfilePage() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        {/* Profile card */}
+        {/* ─── Profile card ───────────────────────────── */}
         <div className="card p-4 sm:p-6 mb-4">
           <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-5">
             <div className="relative mx-auto sm:mx-0">
@@ -175,9 +182,7 @@ export default function ProfilePage() {
                     <VerifiedBadge user={user} size={16} />
                   </h1>
                   <div className="flex items-center justify-center sm:justify-start gap-2 mt-1 flex-wrap text-xs">
-                    <span
-                      className={`font-medium capitalize ${getSkillColor(user.skillLevel)}`}
-                    >
+                    <span className={`font-medium capitalize ${getSkillColor(user.skillLevel)}`}>
                       <Shield size={11} className="inline mr-1" />
                       {user.skillLevel}
                     </span>
@@ -243,98 +248,15 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {isOwnProfile && (
-          <div className="card p-4 mb-4">
-            <h2 className="font-bold text-sm mb-3 flex items-center gap-2">
-              <ShieldCheck size={14} className="text-brand-400" /> Verification
-            </h2>
-            <div className="space-y-2.5">
-              {/* Email row */}
-              <div className="flex items-center justify-between gap-3 p-3 bg-white/5 rounded-lg">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                      user.isEmailVerified
-                        ? "bg-brand-900/40 text-brand-400"
-                        : "bg-white/5 text-slate-500"
-                    }`}
-                  >
-                    <ShieldCheck size={14} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-slate-200">Email</p>
-                    <p className="text-xs text-slate-500 truncate">
-                      {user.email}
-                    </p>
-                  </div>
-                </div>
-                <span
-                  className={`text-xs px-2 py-1 rounded-full ${
-                    user.isEmailVerified
-                      ? "bg-brand-900/40 text-brand-400"
-                      : "bg-yellow-900/40 text-yellow-400"
-                  }`}
-                >
-                  {user.isEmailVerified ? "Verified ✓" : "Pending"}
-                </span>
-              </div>
-
-              {/* Phone row */}
-              <div className="flex items-center justify-between gap-3 p-3 bg-white/5 rounded-lg">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                      user.isPhoneVerified
-                        ? "bg-brand-900/40 text-brand-400"
-                        : "bg-white/5 text-slate-500"
-                    }`}
-                  >
-                    <Phone size={14} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-slate-200">Phone</p>
-                    <p className="text-xs text-slate-500 truncate">
-                      {user.phone || "Not added"}
-                    </p>
-                  </div>
-                </div>
-                {user.isPhoneVerified ? (
-                  <span className="text-xs px-2 py-1 rounded-full bg-brand-900/40 text-brand-400">
-                    Verified ✓
-                  </span>
-                ) : (
-                  <button
-                    onClick={() => setPhoneModalOpen(true)}
-                    className="text-xs px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium transition-colors"
-                  >
-                    Verify
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Stats */}
+        {/* ─── Stats grid ─────────────────────────────── */}
         <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4">
           {[
-            { icon: Activity, label: "Played", value: user.matchesPlayed || 0 },
-            {
-              icon: Trophy,
-              label: "Organised",
-              value: user.matchesOrganised || 0,
-            },
-            {
-              icon: Star,
-              label: "Rating",
-              value: user.averageRating > 0 ? user.averageRating : "—",
-            },
+            { icon: Activity, label: "Played",    value: user.matchesPlayed || 0 },
+            { icon: Trophy,   label: "Organised", value: user.matchesOrganised || 0 },
+            { icon: Star,     label: "Rating",    value: user.averageRating > 0 ? user.averageRating : "—" },
           ].map(({ icon: Icon, label, value }) => (
             <div key={label} className="card p-3 sm:p-4 text-center">
-              <Icon
-                size={14}
-                className="text-brand-400 mx-auto mb-1.5 sm:mb-2"
-              />
+              <Icon size={14} className="text-brand-400 mx-auto mb-1.5 sm:mb-2" />
               <p className="text-lg sm:text-xl font-black text-slate-100">
                 {value}
               </p>
@@ -345,57 +267,85 @@ export default function ProfilePage() {
           ))}
         </div>
 
+        {/* ─── Verification (own profile only) ───────── */}
+        {isOwnProfile && (
+          <div className="card p-3 sm:p-4 mb-4">
+            <h2 className="font-bold text-sm mb-3 flex items-center gap-2">
+              <ShieldCheck size={14} className="text-brand-400" /> Verification
+            </h2>
+            <div className="space-y-2.5">
+              {/* Email row */}
+              <div className="flex items-center justify-between gap-3 p-3 bg-white/5 rounded-lg">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    user.isEmailVerified
+                      ? "bg-brand-900/40 text-brand-400"
+                      : "bg-yellow-900/40 text-yellow-400"
+                  }`}>
+                    <Mail size={14} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-slate-200">Email</p>
+                    <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                  </div>
+                </div>
+                {user.isEmailVerified ? (
+                  <span className="text-xs px-2 py-1 rounded-full bg-brand-900/40 text-brand-400 flex-shrink-0">
+                    Verified ✓
+                  </span>
+                ) : (
+                  <button
+                    onClick={handleResendEmail}
+                    disabled={resendingEmail}
+                    className="text-xs px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium transition-colors flex-shrink-0 disabled:opacity-50"
+                  >
+                    {resendingEmail ? "Sending..." : "Verify"}
+                  </button>
+                )}
+              </div>
 
-        {/* Verification — only on own profile */}
-{isOwnProfile && (
-  <div className="card p-3 sm:p-4 mb-4">
-    <h2 className="font-bold text-sm mb-3 flex items-center gap-2">
-      <ShieldCheck size={14} className="text-brand-400" /> Verification
-    </h2>
-    <div className="flex items-center justify-between gap-3 p-3 bg-white/5 rounded-lg">
-      <div className="flex items-center gap-3 min-w-0">
-        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-          user.isEmailVerified ? "bg-brand-900/40 text-brand-400" : "bg-yellow-900/40 text-yellow-400"
-        }`}>
-          <Mail size={14} />
-        </div>
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-slate-200">Email</p>
-          <p className="text-xs text-slate-500 truncate">{user.email}</p>
-        </div>
-      </div>
-      {user.isEmailVerified ? (
-        <span className="text-xs px-2 py-1 rounded-full bg-brand-900/40 text-brand-400 flex-shrink-0">
-          Verified ✓
-        </span>
-      ) : (
-        <button
-          onClick={async () => {
-            try {
-              await api.post("/auth/resend-verification");
-              toast.success("Email sent! Check your inbox 📩");
-            } catch (err) {
-              toast.error(err.response?.data?.message || "Failed to send.");
-            }
-          }}
-          className="text-xs px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium transition-colors flex-shrink-0"
-        >
-          Verify
-        </button>
-      )}
-    </div>
-    <p className="text-[11px] text-slate-500 mt-2.5 leading-relaxed">
-      Verified users get more match invites and build trust faster.
-    </p>
-  </div>
-)}
+              {/* Phone row */}
+              <div className="flex items-center justify-between gap-3 p-3 bg-white/5 rounded-lg">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    user.isPhoneVerified
+                      ? "bg-brand-900/40 text-brand-400"
+                      : "bg-white/5 text-slate-500"
+                  }`}>
+                    <Phone size={14} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-slate-200">Phone</p>
+                    <p className="text-xs text-slate-500 truncate">
+                      {user.phone || "Not added"}
+                    </p>
+                  </div>
+                </div>
+                {user.isPhoneVerified ? (
+                  <span className="text-xs px-2 py-1 rounded-full bg-brand-900/40 text-brand-400 flex-shrink-0">
+                    Verified ✓
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => setPhoneModalOpen(true)}
+                    className="text-xs px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium transition-colors flex-shrink-0"
+                  >
+                    Verify
+                  </button>
+                )}
+              </div>
+            </div>
+            <p className="text-[11px] text-slate-500 mt-2.5 leading-relaxed">
+              Verified users get more match invites and build trust faster.
+            </p>
+          </div>
+        )}
 
-        {/* Reviews */}
+        {/* ─── Reviews ─────────────────────────────── */}
         {reviews.length > 0 && (
           <div className="card p-3 sm:p-4 mb-4">
             <h2 className="font-bold text-sm mb-3 sm:mb-4 flex items-center gap-2">
-              <Star size={14} className="text-yellow-400" /> Reviews (
-              {reviews.length})
+              <Star size={14} className="text-yellow-400" /> Reviews ({reviews.length})
             </h2>
             <div className="space-y-3 sm:space-y-4">
               {reviews.slice(0, 5).map((rev) => (
@@ -436,9 +386,9 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* My matches */}
+        {/* ─── My matches ────────────────────────────── */}
         {isOwnProfile && myMatches.length > 0 && (
-          <div>
+          <div className="mb-4">
             <h2 className="font-bold text-sm mb-3 flex items-center gap-2">
               <Trophy size={14} className="text-brand-400" /> My Matches
             </h2>
@@ -449,9 +399,22 @@ export default function ProfilePage() {
             </div>
           </div>
         )}
+
+        {/* ─── Logout (own profile only) ─────────────── */}
+        {isOwnProfile && (
+          <div className="mt-4 sm:mt-6">
+            <button
+              onClick={handleLogout}
+              className="w-full card p-4 flex items-center justify-center gap-2 text-red-400 hover:bg-red-900/20 hover:border-red-800/40 transition-all font-medium text-sm"
+            >
+              <LogOut size={16} />
+              Log out
+            </button>
+          </div>
+        )}
       </motion.div>
 
-      {/* Edit modal */}
+      {/* ─── Edit profile modal ────────────────────── */}
       <Modal
         open={editOpen}
         onClose={() => setEditOpen(false)}
@@ -461,14 +424,10 @@ export default function ProfilePage() {
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <label className="text-xs text-slate-400 mb-1.5 block">
-                Name
-              </label>
+              <label className="text-xs text-slate-400 mb-1.5 block">Name</label>
               <input
                 value={editForm.name || ""}
-                onChange={(e) =>
-                  setEditForm((f) => ({ ...f, name: e.target.value }))
-                }
+                onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
                 className="input"
               />
             </div>
@@ -477,9 +436,7 @@ export default function ProfilePage() {
               <input
                 type="number"
                 value={editForm.age || ""}
-                onChange={(e) =>
-                  setEditForm((f) => ({ ...f, age: e.target.value }))
-                }
+                onChange={(e) => setEditForm((f) => ({ ...f, age: e.target.value }))}
                 className="input"
                 min={13}
                 max={100}
@@ -491,9 +448,7 @@ export default function ProfilePage() {
             <label className="text-xs text-slate-400 mb-1.5 block">Bio</label>
             <textarea
               value={editForm.bio || ""}
-              onChange={(e) =>
-                setEditForm((f) => ({ ...f, bio: e.target.value }))
-              }
+              onChange={(e) => setEditForm((f) => ({ ...f, bio: e.target.value }))}
               className="input resize-none"
               rows={3}
               maxLength={300}
@@ -504,9 +459,7 @@ export default function ProfilePage() {
             <label className="text-xs text-slate-400 mb-2 block">Gender</label>
             <select
               value={editForm.gender || ""}
-              onChange={(e) =>
-                setEditForm((f) => ({ ...f, gender: e.target.value }))
-              }
+              onChange={(e) => setEditForm((f) => ({ ...f, gender: e.target.value }))}
               className="input"
             >
               <option value="">Prefer not to say</option>
@@ -517,17 +470,13 @@ export default function ProfilePage() {
           </div>
 
           <div>
-            <label className="text-xs text-slate-400 mb-2 block">
-              Skill Level
-            </label>
+            <label className="text-xs text-slate-400 mb-2 block">Skill Level</label>
             <div className="flex gap-1.5 flex-wrap">
               {SKILL_LEVELS.filter((s) => s.value !== "any").map((s) => (
                 <button
                   key={s.value}
                   type="button"
-                  onClick={() =>
-                    setEditForm((f) => ({ ...f, skillLevel: s.value }))
-                  }
+                  onClick={() => setEditForm((f) => ({ ...f, skillLevel: s.value }))}
                   className={`text-xs px-3 py-1.5 rounded-lg border transition-all ${
                     editForm.skillLevel === s.value
                       ? "bg-brand-900/50 border-brand-700 text-brand-400"
@@ -541,9 +490,7 @@ export default function ProfilePage() {
           </div>
 
           <div>
-            <label className="text-xs text-slate-400 mb-2 block">
-              Preferred Sports
-            </label>
+            <label className="text-xs text-slate-400 mb-2 block">Preferred Sports</label>
             <div className="flex gap-1.5 flex-wrap">
               {SPORTS.map((s) => (
                 <button
@@ -563,10 +510,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 pt-2">
-            <button
-              onClick={() => setEditOpen(false)}
-              className="btn-secondary flex-1"
-            >
+            <button onClick={() => setEditOpen(false)} className="btn-secondary flex-1">
               Cancel
             </button>
             <button
@@ -579,6 +523,8 @@ export default function ProfilePage() {
           </div>
         </div>
       </Modal>
+
+      {/* ─── Phone verification modal ─────────────── */}
       <PhoneVerifyModal
         open={phoneModalOpen}
         onClose={() => setPhoneModalOpen(false)}
