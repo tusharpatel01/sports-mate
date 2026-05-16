@@ -5,24 +5,30 @@ import { AnimatePresence } from "framer-motion";
 
 import { useAuth, useSocket } from "./hooks";
 import { selectIsAuthenticated, selectCurrentUser } from "./features/auth/authSlice";
+import { lazy, Suspense } from "react";
+
 
 import AppLayout from "./components/layout/AppLayout";
-import Landing from "./pages/Landing";
-import Home from "./pages/Home";
-import Explore from "./pages/Explore";
-import MatchDetail from "./pages/MatchDetail";
-import CreateMatch from "./pages/CreateMatch";
-import ChatPage from "./pages/ChatPage";
-import ProfilePage from "./pages/ProfilePage";
-import NotificationsPage from "./pages/NotificationsPage";
-import OnboardingPage from "./pages/Onboarding/OnboardingPage";
-import AdminDashboard from "./pages/Admin/AdminDashboard";
-import LoginPage from "./pages/Auth/LoginPage";
-import RegisterPage from "./pages/Auth/RegisterPage";
-import ForgotPassword from "./pages/Auth/ForgotPassword";
-import ResetPassword from "./pages/Auth/ResetPassword";
-import VerifyEmail from "./pages/Auth/VerifyEmail";
-import NotFound from "./pages/NotFound";
+
+
+// ─── Lazy-loaded pages (each becomes its own chunk) ──
+const Landing           = lazy(() => import("./pages/Landing"));
+const Home              = lazy(() => import("./pages/Home"));
+const Explore           = lazy(() => import("./pages/Explore"));
+const MatchDetail       = lazy(() => import("./pages/MatchDetail"));
+const CreateMatch       = lazy(() => import("./pages/CreateMatch"));
+const ChatPage          = lazy(() => import("./pages/ChatPage"));
+const ProfilePage       = lazy(() => import("./pages/ProfilePage"));
+const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
+const OnboardingPage    = lazy(() => import("./pages/Onboarding/OnboardingPage"));
+const AdminDashboard    = lazy(() => import("./pages/Admin/AdminDashboard"));
+const LoginPage         = lazy(() => import("./pages/Auth/LoginPage"));
+const RegisterPage      = lazy(() => import("./pages/Auth/RegisterPage"));
+const ForgotPassword    = lazy(() => import("./pages/Auth/ForgotPassword"));
+const ResetPassword     = lazy(() => import("./pages/Auth/ResetPassword"));
+const VerifyEmail       = lazy(() => import("./pages/Auth/VerifyEmail"));
+const NotFound          = lazy(() => import("./pages/NotFound"));
+
 import LoadingScreen from "./components/common/LoadingScreen";
 
 // ─── Route guards ─────────────────────────────────────────
@@ -67,6 +73,7 @@ export default function App() {
   useSocket();
 
   return (
+      <Suspense fallback={<LoadingScreen />}>
     <AnimatePresence mode="wait">
       <Routes>
         {/* Public */}
@@ -106,5 +113,6 @@ export default function App() {
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>
+     </Suspense>
   );
 }
