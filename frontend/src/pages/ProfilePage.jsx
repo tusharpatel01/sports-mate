@@ -18,6 +18,8 @@ import { Modal, Spinner } from "../components/common";
 import { SPORTS, SKILL_LEVELS, getSkillColor } from "../utils";
 import PhoneVerifyModal from "../components/auth/PhoneVerifyModal";
 import VerifiedBadge from "../components/common/VerifiedBadge";
+
+import ProfileCompletionMeter from "../components/common/ProfileCompletionMeter";
 import api from "../api/axios";
 import toast from "react-hot-toast";
 
@@ -86,6 +88,30 @@ export default function ProfilePage() {
       setEditLoading(false);
     }
   };
+
+const handleCompletionItemClick = (key) => {
+  // Map each missing item to the right action
+  switch (key) {
+    case "avatar":
+      // Trigger the avatar upload (scroll to top + flash the avatar)
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      toast("Tap the camera icon below to add your photo", { icon: "📷" });
+      break;
+    case "isEmailVerified":
+      handleResendEmail();
+      break;
+    case "isPhoneVerified":
+      setPhoneModalOpen(true);
+      break;
+    case "location":
+      toast("Enable location from your browser settings", { icon: "📍" });
+      break;
+    default:
+      // bio, age, gender, skillLevel, preferredSports — all in edit modal
+      setEditOpen(true);
+      break;
+  }
+};
 
   const handleLogout = async () => {
     await dispatch(logoutUser());
@@ -247,6 +273,14 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+
+        {/* Profile completion meter (own profile only) */}
+{isOwnProfile && (
+  <ProfileCompletionMeter
+    user={user}
+    onItemClick={handleCompletionItemClick}
+  />
+)}
 
         {/* ─── Stats grid ─────────────────────────────── */}
         <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4">
